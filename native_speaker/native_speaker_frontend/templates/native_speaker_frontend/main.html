@@ -1,0 +1,271 @@
+<!-- <!DOCTYPE html>
+<html lang="pl">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nagrywanie Audio</title>
+</head>
+<body>
+    <button id="start">🎤 Rozpocznij nagrywanie</button>
+    <p id="transcript">Tu pojawi się transkrypcja...</p>
+
+    <script>
+    let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'pl-PL'; // Język polski
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    document.getElementById("start").addEventListener("click", () => {
+        recognition.start();
+    });
+
+    recognition.onresult = function (event) {
+        let transcript = event.results[0][0].transcript;
+        document.getElementById("transcript").innerText = "Ty: " + transcript;
+        sendToAI(transcript);
+    };
+
+    function sendToAI(text) {
+        fetch("http://127.0.0.1:8000/chatbot/", { // Zmień na swój serwer
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            let responseText = "Bot: " + data.response;
+            let p = document.createElement("p");
+            p.innerText = responseText;
+            document.body.appendChild(p);
+        });
+    }
+    </script> -->
+    <!-- <h1>Nagrywanie Audio</h1>
+    <button id="startBtn">Rozpocznij nagrywanie</button>
+    <button id="stopBtn" disabled>Zatrzymaj nagrywanie</button>
+    <audio id="audioPlayer" controls></audio>
+    <p id="transcription"></p>
+    <p id="correctSentence"></p>
+    <p id="accuracy"></p>
+    <p id="feedback"></p>
+    <p id="aiResponse"></p>
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        // Pobranie referencji do elementów
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const audioPlayer = document.getElementById("audioPlayer");
+        const transcriptionDisplay = document.getElementById("transcription");
+
+        // Funkcja inicjalizująca nagrywanie
+        startBtn.addEventListener("click", async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                audioPlayer.src = audioUrl;
+
+                // Przesłanie pliku na serwer Django
+                const formData = new FormData();
+                formData.append("audio", audioBlob, "nagranie.wav");
+                console.log(getCookie("csrftoken"));
+                const response = await fetch("http://127.0.0.1:8000/upload/", {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken"), // Pobranie tokena CSRF
+                    },
+                });
+
+                const data = await response.json();
+                transcriptionDisplay.innerText = "Transkrypcja: " + data.transkrypcja;
+            };
+
+            mediaRecorder.start();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        });
+
+        // Zatrzymanie nagrywania
+        stopBtn.addEventListener("click", () => {
+            mediaRecorder.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        });
+
+        // Funkcja do pobierania tokena CSRF (wymagane przez Django)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    
+    
+    <script>
+        
+        async function sendAudio(audioBlob) {
+            const formData = new FormData();
+            formData.append("audio", audioBlob, "nagranie.wav");
+            console.log(audioBlob);
+            const response = await fetch("/upload/", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+            });
+    
+            const data = await response.json();
+            document.getElementById("transcription").innerText = "Transkrypcja: " + data.transkrypcja;
+            document.getElementById("correctSentence").innerText = "Poprawna wersja: " + data.poprawna_wersja;
+            document.getElementById("accuracy").innerText = "Poprawność wymowy: " + data.poprawność;
+            document.getElementById("feedback").innerText = "Ocena: " + data.ocena;
+            document.getElementById("aiResponse").innerText = "AI: " + data.odpowiedz_ai;
+        }
+    </script> -->
+    
+<!-- </body>
+</html>
+ -->
+ <!-- <!DOCTYPE html>
+ <html lang="pl">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Test Whisper</title>
+ </head>
+ <body>
+     <h1>Nagrywanie głosu i transkrypcja</h1>
+     <button id="startRecord">Start</button>
+     <button id="stopRecord" disabled>Stop</button>
+     <p>Transkrypcja: <span id="transkrypcja"></span></p>
+ 
+     <script>
+         let mediaRecorder;
+         let audioChunks = [];
+ 
+         document.getElementById("startRecord").addEventListener("click", async () => {
+             let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+             mediaRecorder = new MediaRecorder(stream);
+             
+             mediaRecorder.ondataavailable = event => {
+                 audioChunks.push(event.data);
+             };
+ 
+             mediaRecorder.onstop = async () => {
+                 let audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                 let formData = new FormData();
+                 formData.append("audio", audioBlob, "nagranie.wav");
+ 
+                 let response = await fetch("http://127.0.0.1:8000/upload/", {
+                     method: "POST",
+                     body: formData
+                 });
+ 
+                 let data = await response.json();
+                 document.getElementById("transkrypcja").textContent = data.transkrypcja || "Błąd transkrypcji";
+             };
+ 
+             mediaRecorder.start();
+             document.getElementById("startRecord").disabled = true;
+             document.getElementById("stopRecord").disabled = false;
+         });
+ 
+         document.getElementById("stopRecord").addEventListener("click", () => {
+             mediaRecorder.stop();
+             document.getElementById("startRecord").disabled = false;
+             document.getElementById("stopRecord").disabled = true;
+         });
+     </script>
+ </body>
+ </html> -->
+ <!DOCTYPE html>
+ <html lang="pl">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Głosowy Chatbot</title>
+ </head>
+ <body>
+     <h1>Nagrywanie głosu i chatbot AI</h1>
+     <button id="startRecord">Start</button>
+     <button id="stopRecord" disabled>Stop</button>
+     <p><b>Twoja transkrypcja:</b> <span id="transkrypcja"></span></p>
+     <p><b>Odpowiedź AI:</b> <span id="odpowiedz_ai"></span></p>
+ 
+     <!-- Element audio do odtwarzania pliku MP3 -->
+     <audio id="audioPlayer" controls></audio>
+ 
+     <script>
+         let mediaRecorder;
+         let audioChunks;
+ 
+         // Rozpoczęcie nagrywania
+         document.getElementById("startRecord").addEventListener("click", async () => {
+             let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+             mediaRecorder = new MediaRecorder(stream);
+             audioChunks = [];  // Resetujemy nagranie, aby nie dodawało do poprzedniego
+ 
+             mediaRecorder.ondataavailable = event => {
+                 audioChunks.push(event.data);
+             };
+ 
+             mediaRecorder.onstop = async () => {
+                 let audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                 let formData = new FormData();
+                 formData.append("audio", audioBlob, "nagranie.wav");
+ 
+                 // Wysyłanie pliku audio na serwer
+                 let response = await fetch("http://127.0.0.1:8000/upload/", {
+                     method: "POST",
+                     body: formData
+                 });
+ 
+                 let data = await response.json();
+ 
+                 // Wyświetlanie transkrypcji i odpowiedzi AI
+                 document.getElementById("transkrypcja").textContent = data.transkrypcja || "Błąd transkrypcji";
+                 document.getElementById("odpowiedz_ai").textContent = data.odpowiedz_ai || "Brak odpowiedzi od AI";
+ 
+                 // Odtwarzanie wygenerowanego pliku audio
+                 if (data.audio_url) {
+                     let audioPlayer = document.getElementById("audioPlayer");
+                     audioPlayer.src = data.audio_url;
+                     audioPlayer.play();  // Automatyczne odtworzenie
+                 }
+             };
+ 
+             mediaRecorder.start();
+             document.getElementById("startRecord").disabled = true;
+             document.getElementById("stopRecord").disabled = false;
+         });
+ 
+         // Zatrzymanie nagrywania
+         document.getElementById("stopRecord").addEventListener("click", () => {
+             mediaRecorder.stop();
+             document.getElementById("startRecord").disabled = false;
+             document.getElementById("stopRecord").disabled = true;
+         });
+     </script>
+ </body>
+ </html>
