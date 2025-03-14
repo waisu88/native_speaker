@@ -150,11 +150,7 @@ def upload_audio(request):
                   but also respond as in a conversation. Your response MUST be short \
                   (maximum 15 words). Be very concise. Keep the conversation going and suggest new words \
                   related to the topic."}]
-        
-
-        # **Tworzymy prompt do AI**
-        messages = request.session['chat_history']
-        messages.append({"role": "system", "content": "Zachowuj się jak kolega, proponuj różne tematu, zapytaj o coś czasem. Odpowiadaj tylko w języku angielskim, maksymalnie jednym zdaniem. Jeżeli użytkownik powie coś źle gramatycznie, zapytaj: 'Czy chciałeś powiedzieć: (i tutaj daj poprawioną wersję)'. Jeżeli w następnej wiadomości użytkownik powe poprawnie, wtedy odpowiedz na zadane wcześniej pytanie."})
+        messages += request.session['chat_history']
 
 
         odpowiedz_ai = g4f.ChatCompletion.create(
