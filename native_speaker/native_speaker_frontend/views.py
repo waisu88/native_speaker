@@ -131,7 +131,7 @@ def upload_audio(request):
 
         # **Transkrypcja audio**
         model = whisper.load_model("base")
-        result = model.transcribe(sciezka_audio, language="en")
+        result = model.transcribe(sciezka_audio, language="hr")
         transkrypcja = result['text']
 
         # **Zapisujemy historię rozmowy w sesji**
@@ -140,14 +140,19 @@ def upload_audio(request):
 
         request.session['chat_history'].append({"role": "user", "content": transkrypcja})
 
+        request.session['chat_history'] = request.session['chat_history'][-10:]
         # **Tworzymy prompt do AI**
-        messages = request.session['chat_history']
-        messages.append({"role": "system", "content": "Zachowuj się jak kolega, proponuj różne tematu, zapytaj o coś czasem. Odpowiadaj tylko w języku angielskim, maksymalnie jednym zdaniem. Jeżeli użytkownik powie coś źle gramatycznie, zapytaj: 'Czy chciałeś powiedzieć: (i tutaj daj poprawioną wersję)'. Jeżeli w następnej wiadomości użytkownik powe poprawnie, wtedy odpowiedz na zadane wcześniej pytanie."})
+        messages = [{"role": "system", "content": "You are a native speaker from Croatia. \
+                  You answer only in Croatian. Correct mistakes in a subtle way, \
+                  but also respond as in a conversation. Your response MUST be short \
+                  (maximum 15 words). Be very concise. Keep the conversation going and suggest new words \
+                  related to the topic."}]
+        messages += request.session['chat_history']
 
         odpowiedz_ai = g4f.ChatCompletion.create(
             model="gpt-4",
             messages=messages,
-            max_tokens=100  
+            max_tokens=40  
         )
 
         # **Zapisujemy odpowiedź AI w historii**
@@ -155,7 +160,7 @@ def upload_audio(request):
         request.session.modified = True  # Zapisujemy zmiany w sesji
 
         # **Tworzenie pliku audio**
-        tts = gTTS(text=odpowiedz_ai, lang='en')
+        tts = gTTS(text=odpowiedz_ai, lang='hr')
         audio_path = os.path.join(settings.MEDIA_ROOT, "response.mp3")
         tts_io = BytesIO()
         tts.write_to_fp(tts_io)
